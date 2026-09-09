@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const prisma = require('../config/database');
 const authService = require('../services/auth.service');
 
 const loginSchema = z.object({
@@ -35,4 +36,22 @@ async function login(req, res) {
   }
 }
 
-module.exports = { login };
+async function me(req, res) {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.userId },
+  });
+
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  return res.status(200).json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    departmentId: user.departmentId,
+  });
+}
+
+module.exports = { login, me };
