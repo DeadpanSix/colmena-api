@@ -1,0 +1,43 @@
+// learn more about in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  ADMIN
+  DEPARTMENT
+}
+
+model Department {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  type      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  users User[]
+
+  @@map("departments")
+}
+
+model User {
+  id              Int         @id @default(autoincrement())
+  name            String
+  email           String      @unique
+  passwordHash    String
+  role            Role        @default(DEPARTMENT)
+  failedAttempts  Int         @default(0)
+  lockedUntil     DateTime?
+  departmentId    Int?
+  department      Department? @relation(fields: [departmentId], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("users")
+}
