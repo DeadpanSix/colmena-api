@@ -5,3 +5,5 @@ node_modules/
 dist/
 uploads/
 coverage/
+/src/generated/prisma
+prisma/certs/
