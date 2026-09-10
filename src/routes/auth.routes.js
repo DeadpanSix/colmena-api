@@ -7,5 +7,7 @@ const router = express.Router();
 
 router.post('/login', loginRateLimiter, authController.login);
 router.get('/me', verifyToken, authController.me);
+router.post('/refresh', authController.refresh);
+router.post('/logout', authController.logout);
 
 module.exports = router;

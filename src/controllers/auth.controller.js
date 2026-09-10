@@ -7,6 +7,15 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const REFRESH_COOKIE_NAME = 'refreshToken';
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, matches JWT_REFRESH_EXPIRES_IN
+  path: '/api/auth', // only for auth-related endpoints
+};
+
 async function login(req, res) {
   const parseResult = loginSchema.safeParse(req.body);
 
@@ -18,7 +27,13 @@ async function login(req, res) {
 
   try {
     const result = await authService.login(email, password);
-    return res.status(200).json(result);
+
+    res.cookie(REFRESH_COOKIE_NAME, result.refreshToken, REFRESH_COOKIE_OPTIONS);
+
+    return res.status(200).json({
+      user: result.user,
+      accessToken: result.accessToken,
+    });
   } catch (error) {
     if (error instanceof authService.InvalidCredentialsError) {
       return res.status(401).json({ error: error.message });
@@ -54,4 +69,24 @@ async function me(req, res) {
   });
 }
 
-module.exports = { login, me };
+async function refresh(req, res) {
+  const refreshToken = req.cookies[REFRESH_COOKIE_NAME];
+
+  try {
+    const accessToken = await authService.refreshAccessToken(refreshToken);
+    return res.status(200).json({ accessToken });
+  } catch (error) {
+    if (error instanceof authService.InvalidCredentialsError) {
+      return res.status(401).json({ error: 'Invalid or expired refresh token' });
+    }
+    console.error('Unexpected refresh error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function logout(req, res) {
+  res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
+  return res.status(200).json({ message: 'Logged out successfully' });
+}
+
+module.exports = { login, me, refresh, logout };
