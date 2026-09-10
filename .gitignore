@@ -6,3 +6,4 @@ dist/
 uploads/
 coverage/
 prisma/certs/
+.DS_Store
