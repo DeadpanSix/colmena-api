@@ -61,7 +61,7 @@ async function handleFailedAttempt(user) {
 }
 
 function generateTokens(user) {
-  const payload = { userId: user.id, role: user.role };
+  const payload = { userId: user.id, role: user.role, teamId: user.teamId };
 
   const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',

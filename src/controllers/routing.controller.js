@@ -10,6 +10,10 @@ const addStepsSchema = z.object({
   ).min(1),
 });
 
+const completeStepSchema = z.object({
+  comment: z.string().min(1).max(2000),
+});
+
 async function addSteps(req, res) {
   const documentId = Number(req.params.id);
 
@@ -35,4 +39,40 @@ async function addSteps(req, res) {
   }
 }
 
-module.exports = { addSteps };
+async function completeStep(req, res) {
+  const documentId = Number(req.params.id);
+  const stepOrder = Number(req.params.order);
+
+  if (Number.isNaN(documentId) || Number.isNaN(stepOrder)) {
+    return res.status(400).json({ error: 'Invalid document id or step order' });
+  }
+
+  if (!req.user.teamId) {
+    return res.status(403).json({ error: 'You must belong to a team to complete routing steps' });
+  }
+
+  const parseResult = completeStepSchema.safeParse(req.body);
+
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request data' });
+  }
+
+  try {
+    const step = await routingService.completeStep(
+      documentId,
+      stepOrder,
+      req.user.userId,
+      req.user.teamId,
+      parseResult.data.comment
+    );
+    return res.status(200).json(step);
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error('Unexpected error completing routing step:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { addSteps, completeStep };

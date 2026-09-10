@@ -63,4 +63,71 @@ async function addSteps(documentId, steps) {
   });
 }
 
-module.exports = { addSteps };
+async function completeStep(documentId, stepOrder, userId, userTeamId, comment) {
+  const routingStep = await prisma.routingStep.findUnique({
+    where: {
+      documentId_order: {
+        documentId,
+        order: stepOrder,
+      },
+    },
+  });
+
+  if (!routingStep) {
+    const error = new Error('Routing step not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (routingStep.teamId !== userTeamId) {
+    const error = new Error('This routing step does not belong to your team');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (routingStep.status === 'COMPLETED') {
+    const error = new Error('This routing step has already been completed');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const previousPendingStep = await prisma.routingStep.findFirst({
+    where: {
+      documentId,
+      order: { lt: stepOrder },
+      status: 'PENDING',
+    },
+  });
+
+  if (previousPendingStep) {
+    const error = new Error('A previous routing step must be completed first');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const updatedStep = await prisma.routingStep.update({
+    where: { id: routingStep.id },
+    data: {
+      status: 'COMPLETED',
+      comment,
+      completedAt: new Date(),
+      completedById: userId,
+    },
+    include: { team: true, completedBy: { select: { id: true, name: true, email: true } } },
+  });
+
+  const remainingSteps = await prisma.routingStep.count({
+    where: { documentId, status: 'PENDING' },
+  });
+
+  if (remainingSteps === 0) {
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { status: 'PENDING_RESPONSE' },
+    });
+  }
+
+  return updatedStep;
+}
+
+module.exports = { addSteps, completeStep };
