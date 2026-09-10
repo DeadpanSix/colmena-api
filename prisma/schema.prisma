@@ -13,6 +13,19 @@ enum Role {
   DEPARTMENT
 }
 
+enum DocumentStatus {
+  RECEIVED
+  IN_ROUTING
+  PENDING_RESPONSE
+  RESPONDED
+  CANCELLED
+}
+
+enum RoutingStepStatus {
+  PENDING
+  COMPLETED
+}
+
 model Department {
   id        Int       @id @default(autoincrement())
   name      String    @unique
@@ -21,8 +34,21 @@ model Department {
   updatedAt DateTime  @updatedAt
 
   users User[]
+  documents Document[]
 
   @@map("departments")
+}
+
+model Team {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  routingSteps RoutingStep[]
+
+  @@map("teams")
 }
 
 model User {
@@ -35,8 +61,86 @@ model User {
   lockedUntil     DateTime?
   departmentId    Int?
   department      Department? @relation(fields: [departmentId], references: [id])
+  teamId          Int?
+  team            Team?       @relation(fields: [teamId], references: [id])
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
+  uploadedDocuments Document[]    @relation("UploadedDocuments")
+  completedSteps    RoutingStep[] @relation("CompletedRoutingSteps")
+  responses         Response[]    @relation("RespondedDocuments")
+
   @@map("users")
+}
+
+model Document {
+  id                  Int            @id @default(autoincrement())
+  folio               String         @unique
+  title               String
+  filePath            String
+  documentTypeId      Int
+  documentType        DocumentType   @relation(fields: [documentTypeId], references: [id])
+  originDepartmentId  Int
+  originDepartment    Department     @relation(fields: [originDepartmentId], references: [id])
+  uploadedById        Int
+  uploadedBy          User           @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+  status              DocumentStatus @default(RECEIVED)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  routingSteps  RoutingStep[]
+  response      Response?
+
+  @@map("documents")
+}
+
+model RoutingStep {
+  id            Int               @id @default(autoincrement())
+  documentId    Int
+  document      Document          @relation(fields: [documentId], references: [id])
+  teamId        Int
+  team          Team              @relation(fields: [teamId], references: [id])
+  order         Int
+  status        RoutingStepStatus @default(PENDING)
+  deadline      DateTime
+  comment       String?           @db.Text
+  completedById Int?
+  completedBy   User?             @relation("CompletedRoutingSteps", fields: [completedById], references: [id])
+  completedAt   DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([documentId, order])
+  @@map("routing_steps")
+}
+
+model DocumentType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  prefix    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
+
+  @@map("document_types")
+}
+
+model DocumentSequence {
+  id      Int @id @default(1)
+  current Int @default(0)
+
+  @@map("document_sequence")
+}
+
+model Response {
+  id            Int      @id @default(autoincrement())
+  documentId    Int      @unique
+  document      Document @relation(fields: [documentId], references: [id])
+  content       String   @db.Text
+  respondedById Int
+  respondedBy   User     @relation("RespondedDocuments", fields: [respondedById], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@map("responses")
 }
