@@ -47,6 +47,33 @@ async function login(email, password) {
   return { user: sanitizeUser(user), ...tokens };
 }
 
+async function refreshAccessToken(refreshToken) {
+  if (!refreshToken) {
+    throw new InvalidCredentialsError();
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  } catch (error) {
+    throw new InvalidCredentialsError();
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+
+  if (!user) {
+    throw new InvalidCredentialsError();
+  }
+
+  const payload = { userId: user.id, role: user.role, teamId: user.teamId };
+
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+  });
+
+  return accessToken;
+}
+
 async function handleFailedAttempt(user) {
   const newFailedAttempts = user.failedAttempts + 1;
   const shouldLock = newFailedAttempts >= MAX_FAILED_ATTEMPTS;
@@ -86,6 +113,7 @@ function sanitizeUser(user) {
 
 module.exports = {
   login,
+  refreshAccessToken,
   InvalidCredentialsError,
   AccountLockedError,
 };
