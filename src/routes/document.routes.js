@@ -14,5 +14,6 @@ router.post('/', verifyToken, upload, verifyAndSaveFile, documentController.crea
 router.post('/:id/routing', verifyToken, requireRole('ADMIN'), routingController.addSteps);
 router.patch('/:id/routing/:order/complete', verifyToken, routingController.completeStep);
 router.post('/:id/response', verifyToken, responseController.create);
+router.patch('/:id/cancel', verifyToken, documentController.cancel);
 
 module.exports = router;

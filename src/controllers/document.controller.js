@@ -59,4 +59,23 @@ async function list(req, res) {
   return res.status(200).json(documents);
 }
 
-module.exports = { create, getById, list };
+async function cancel(req, res) {
+  const id = Number(req.params.id);
+
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid document id' });
+  }
+
+  try {
+    const document = await documentService.cancel(id, req.user.userId);
+    return res.status(200).json(document);
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error('Unexpected error cancelling document:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { create, getById, list, cancel };

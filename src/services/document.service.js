@@ -110,4 +110,33 @@ async function list() {
   });
 }
 
-module.exports = { create, getById, list, generateFolio };
+async function cancel(documentId, userId) {
+  const document = await prisma.document.findUnique({
+    where: { id: documentId },
+  });
+
+  if (!document) {
+    const error = new Error('Document not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (document.uploadedById !== userId) {
+    const error = new Error('Only the user who uploaded this document can cancel it');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (document.status === 'RESPONDED' || document.status === 'CANCELLED') {
+    const error = new Error(`Cannot cancel a document with status ${document.status}`);
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return prisma.document.update({
+    where: { id: documentId },
+    data: { status: 'CANCELLED' },
+  });
+}
+
+module.exports = { create, getById, list, generateFolio, cancel };
