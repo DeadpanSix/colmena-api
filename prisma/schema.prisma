@@ -126,6 +126,13 @@ model DocumentType {
   @@map("document_types")
 }
 
+model DocumentSequence {
+  id      Int @id @default(1)
+  current Int @default(0)
+
+  @@map("document_sequence")
+}
+
 model Response {
   id            Int      @id @default(autoincrement())
   documentId    Int      @unique

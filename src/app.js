@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth.routes');
 const departmentRoutes = require('./routes/department.routes');
 const teamRoutes = require('./routes/team.routes');
 const documentTypeRoutes = require('./routes/documentType.routes');
+const documentRoutes = require('./routes/document.routes');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/document-types', documentTypeRoutes);
+app.use('/api/documents', documentRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found'})
