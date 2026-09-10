@@ -78,6 +78,8 @@ model Document {
   folio               String         @unique
   title               String
   filePath            String
+  documentTypeId      Int
+  documentType        DocumentType   @relation(fields: [documentTypeId], references: [id])
   originDepartmentId  Int
   originDepartment    Department     @relation(fields: [originDepartmentId], references: [id])
   uploadedById        Int
@@ -110,6 +112,18 @@ model RoutingStep {
 
   @@unique([documentId, order])
   @@map("routing_steps")
+}
+
+model DocumentType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  prefix    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
+
+  @@map("document_types")
 }
 
 model Response {
