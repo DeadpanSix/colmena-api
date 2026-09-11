@@ -66,6 +66,7 @@ async function me(req, res) {
     email: user.email,
     role: user.role,
     departmentId: user.departmentId,
+    teamId: user.teamId
   });
 }
 
