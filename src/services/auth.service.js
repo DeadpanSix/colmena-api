@@ -108,6 +108,7 @@ function sanitizeUser(user) {
     email: user.email,
     role: user.role,
     departmentId: user.departmentId,
+    teamId: user.teamId
   };
 }
 
