@@ -23,7 +23,7 @@ async function main() {
   const teamMemberPasswordHash = await bcrypt.hash('Test1234!', SALT_ROUNDS);
 
   const teamMemberUser = await prisma.user.upsert({
-    where: { email: 'dev@colmena.local' },
+    where: { email: 'developer@colmena.local' },
     update: {},
     create: {
       name: 'Developer Team Member',
